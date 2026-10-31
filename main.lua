@@ -15644,44 +15644,46 @@ local h=aB(aA)
 
 aa.Transparent=aA.Transparent
 aa.Window=h
--- [ 注入强制挂载图片 ]
-local _mainFrame = h.UIElements.Main
-local _followHolder = Instance.new("Frame")
-_followHolder.Name = "FollowDecor"
-_followHolder.BackgroundTransparency = 1
-_followHolder.Size = UDim2.fromOffset(250, 250) -- 图的大小
-_followHolder.ZIndex = 9999999 -- 极高层级，防止被红龙背景遮挡
--- 强制挂在主框架的最里面
-_followHolder.Parent = _mainFrame 
+-- 强制挂载悬浮图片
+local _imgUrl = "https://raw.githubusercontent.com/lIllIIlII/NEW/main/deepseek-ui/assets/pet_01.png"
+local _imgId = "rbxassetid://131126436897551" 
+if writefile and getcustomasset then
+    pcall(function()
+        if not isfile("DS_Follow.png") then
+            writefile("DS_Follow.png", game:HttpGet(_imgUrl))
+        end
+        _imgId = getcustomasset("DS_Follow.png")
+    end)
+end
 
-local _followImg = Instance.new("ImageLabel")
-_followImg.BackgroundTransparency = 1
-_followImg.Image = "https://raw.githubusercontent.com/ggsq1741-debug/cQ/refs/heads/main/33490c2c-02d8-4dc8-b24a-0e0478a45b8f.png" -- 你的图
-_followImg.Size = UDim2.fromScale(1, 1)
-_followImg.ScaleType = Enum.ScaleType.Fit
-_followImg.ZIndex = 9999999
--- 锚点：X=1(右侧), Y=0(顶部)；贴在窗口左侧外面就是 X=0, Y=0，然后 X 偏移改负数
-_followImg.AnchorPoint = Vector2.new(1, 0) 
-_followImg.Parent = _followHolder
+local _holder = Instance.new("Frame")
+_holder.BackgroundTransparency = 1
+_holder.Size = UDim2.fromOffset(250, 250)
+_holder.ZIndex = 999999
+_holder.Parent = game:GetService("CoreGui")
 
--- 相对窗口的固定位置 (用 UDim2 相对坐标，不用再去监听 AbsolutePosition 了)
--- UDim2.new(0, -20, 0, 0) 意思是：贴着窗口最左边，往外偏 20 像素
--- 如果你想贴右边，改成 UDim2.new(1, 20, 0, 0)
-_followHolder.Position = UDim2.new(0, -20, 0, 0)
+local _img = Instance.new("ImageLabel")
+_img.BackgroundTransparency = 1
+_img.Image = _imgId
+_img.Size = UDim2.fromScale(1, 1)
+_img.ScaleType = Enum.ScaleType.Fit
+_img.Parent = _holder
 
--- 处理显隐
-local _origClose = h.Close
+local _main = h.UIElements.Main
+local function _sync()
+    _holder.Position = UDim2.fromOffset(_main.AbsolutePosition.X - 270, _main.AbsolutePosition.Y)
+end
+_sync()
+_main:GetPropertyChangedSignal("AbsolutePosition"):Connect(_sync)
+_main:GetPropertyChangedSignal("Visible"):Connect(function()
+    _holder.Visible = _main.Visible
+end)
+
+local _c = h.Close
 h.Close = function(...)
-    _followHolder.Visible = false
-    return _origClose(...)
+    _holder.Visible = false
+    return _c(...)
 end
-
-local _origOpen = h.Open
-h.Open = function(...)
-    _followHolder.Visible = true
-    return _origOpen(...)
-end
-
 
 
 
