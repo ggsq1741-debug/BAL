@@ -15644,33 +15644,32 @@ local h=aB(aA)
 
 aa.Transparent=aA.Transparent
 aa.Window=h
--- [ 注入跟随图片 ]
+-- [ 注入强制挂载图片 ]
+local _mainFrame = h.UIElements.Main
 local _followHolder = Instance.new("Frame")
 _followHolder.Name = "FollowDecor"
 _followHolder.BackgroundTransparency = 1
-_followHolder.Size = UDim2.fromOffset(0, 0)
-_followHolder.ZIndex = 9999999
-_followHolder.Parent = h.UIElements.Main.Parent 
+_followHolder.Size = UDim2.fromOffset(250, 250) -- 图的大小
+_followHolder.ZIndex = 9999999 -- 极高层级，防止被红龙背景遮挡
+-- 强制挂在主框架的最里面
+_followHolder.Parent = _mainFrame 
 
 local _followImg = Instance.new("ImageLabel")
 _followImg.BackgroundTransparency = 1
-_followImg.Image = "rbxassetid://74853190005712" -- 你的图片ID
-_followImg.Size = UDim2.fromOffset(250, 250)     -- 图片大小
+_followImg.Image = "https://raw.githubusercontent.com/ggsq1741-debug/cQ/refs/heads/main/33490c2c-02d8-4dc8-b24a-0e0478a45b8f.png" -- 你的图
+_followImg.Size = UDim2.fromScale(1, 1)
 _followImg.ScaleType = Enum.ScaleType.Fit
-_followImg.AnchorPoint = Vector2.new(1, 0)
-_followImg.ZIndex = 999
+_followImg.ZIndex = 9999999
+-- 锚点：X=1(右侧), Y=0(顶部)；贴在窗口左侧外面就是 X=0, Y=0，然后 X 偏移改负数
+_followImg.AnchorPoint = Vector2.new(1, 0) 
 _followImg.Parent = _followHolder
 
-local _mainFrame = h.UIElements.Main
-local function _syncPos()
-    _followHolder.Position = UDim2.fromOffset(_mainFrame.AbsolutePosition.X - 30, _mainFrame.AbsolutePosition.Y)
-end
-_syncPos()
-_mainFrame:GetPropertyChangedSignal("AbsolutePosition"):Connect(_syncPos)
-_mainFrame:GetPropertyChangedSignal("Visible"):Connect(function()
-    _followHolder.Visible = _mainFrame.Visible
-end)
+-- 相对窗口的固定位置 (用 UDim2 相对坐标，不用再去监听 AbsolutePosition 了)
+-- UDim2.new(0, -20, 0, 0) 意思是：贴着窗口最左边，往外偏 20 像素
+-- 如果你想贴右边，改成 UDim2.new(1, 20, 0, 0)
+_followHolder.Position = UDim2.new(0, -20, 0, 0)
 
+-- 处理显隐
 local _origClose = h.Close
 h.Close = function(...)
     _followHolder.Visible = false
@@ -15680,13 +15679,8 @@ end
 local _origOpen = h.Open
 h.Open = function(...)
     _followHolder.Visible = true
-    _syncPos()
     return _origOpen(...)
 end
-if aA.Acrylic then
-    au.init()
-end
-
 
 
 
